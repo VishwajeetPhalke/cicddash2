@@ -2,6 +2,8 @@ import * as cdk from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines';
+import { CicdStage } from './cicddasstage';
+import { ManualApprovalStep } from 'aws-cdk-lib/pipelines';
 
 export class CicddashStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -26,5 +28,24 @@ export class CicddashStack extends cdk.Stack {
         commands: ['npm ci', 'npm run build', 'npx cdk synth'],
       }),
     });
+
+    //create the test stage 
+    const teststage= pipeline.addStage(new CicdStage(this,'test',{
+      env:{account:'430058392451',region:'us-east-1'}
+    }));
+
+
+
+
+    //manual approval creation so that the user can check whether all the changes a re correct and then deploy all the changes to the production stage
+    // If this step is added to a Pipeline, the Pipeline will be paused waiting for a human to resume it
+    // Only engines that support pausing the deployment will support this step type.
+    teststage.addPost(new ManualApprovalStep('approval'));
+
+
+    //create the productionstage
+    const prodstage= pipeline.addStage(new CicdStage(this,'prod',{
+      env:{account:'430058392451',region:'us-east-1'}
+    }));
   }
 }
