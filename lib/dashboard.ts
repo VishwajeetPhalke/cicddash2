@@ -28,7 +28,7 @@ export class DashStack extends cdk.Stack {
         ec2.InstanceClass.T3,
         ec2.InstanceSize.MICRO
       ),
-      machineImage: ec2.MachineImage.latestAmazonLinux(),
+      machineImage: ec2.MachineImage.latestAmazonLinux2023(),
       blockDevices: [
         {
           deviceName: '/dev/xvda',
