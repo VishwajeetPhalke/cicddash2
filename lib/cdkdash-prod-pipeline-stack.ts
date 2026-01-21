@@ -1,4 +1,4 @@
-// cicddash-stack.ts
+
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import {
@@ -9,16 +9,16 @@ import {
 } from 'aws-cdk-lib/pipelines';
 import { CicdStage } from './cicddasstage';
 
-export class CicddashStack extends cdk.Stack {
+export class CdkdashProdPipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const pipeline = new CodePipeline(this, 'demopipeline', {
-      pipelineName: 'Cicddash-Pipeline',
+    const pipeline = new CodePipeline(this, 'ProdPipeline', {
+      pipelineName: 'Cicddash-Pipeline-Prod',
       synth: new ShellStep('Synth', {
         input: CodePipelineSource.connection(
           'VishwajeetPhalke/cicddash2', // repo
-          'main',                       // branch
+          'main',                       // branch to watch for prod
           {
             connectionArn:
               'arn:aws:codeconnections:us-east-1:430058392451:connection/b1b0d224-2619-4c1b-a7cb-b56248c3f529',
@@ -28,23 +28,15 @@ export class CicddashStack extends cdk.Stack {
       }),
     });
 
-    // ---- TEST STAGE ----
-    const test = pipeline.addStage(
-      new CicdStage(this, 'test', {
-        env: { account: '430058392451', region: 'us-east-1' },
-        envName: 'test',
-      })
-    );
+    // ---- PROD STAGE ONLY ----
+    const prod = new CicdStage(this, 'prod', {
+      env: { account: '430058392451', region: 'us-east-1' },
+      envName: 'prod',
+    });
 
-    // Manual approval before prod
-    test.addPost(new ManualApprovalStep('approval'));
+    const prodStage = pipeline.addStage(prod);
 
-    // ---- PROD STAGE ----
-    pipeline.addStage(
-      new CicdStage(this, 'prod', {
-        env: { account: '430058392451', region: 'us-east-1' },
-        envName: 'prod',
-      })
-    );
+    // Optional: gate production with manual approval
+    prodStage.addPre(new ManualApprovalStep('ProdApproval'));
   }
 }
